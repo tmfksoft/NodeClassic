@@ -6,6 +6,7 @@ self.conf.name = "A NodeJS MC Server";
 
 var Server = function(){
 	this.packets = {};
+	
 	this.packets["0"] = function(){
 		console.log("Server Identification");
 		
@@ -13,6 +14,7 @@ var Server = function(){
 		var structure = ["byte","byte","string","string","byte"];
 		
 		var packet = self.protocol.construct(structure,data);
+		console.log(packet);
 		return packet;
 	}
 }
@@ -113,10 +115,17 @@ var Protocol = function(){
 		return buffer;
 	}
 	this.from.byte = function(buffer,data){
+		console.log("FROM BYTE NOM");
+		
+		
+		console.log(data);
 		//buffer.write(parseInt(data));
-		var buf = new Buffer(1);
-		buf.writeUInt8(data,0);
-		buffer.concat([buf]);
+		//var buf = new Buffer(1);
+		var buf = new Buffer([parseInt(data)]);
+		console.log(buf);
+		console.log(buffer);
+		//buf.writeUInt8(data,0);
+		buffer.concat([buf],1);
 		return buffer;
 	}
 	this.from.sbyte = function(buffer,data){
@@ -144,7 +153,9 @@ var Player = function(sock){
 		var out = self.server.packets["0"]();
 		console.log("ID DATA");
 		console.log(out);
-		sock.write(out);
+		stream = new BufferStream(out);
+		stream.pipe(sock);
+		//sock.write(out);
 	}
 	this.packets["05"] = function(data){
 		console.log("Set Block");
@@ -161,6 +172,7 @@ var sock = net.createServer(function(c) { //'connection' listener
 	c.on('end', function() {
 		console.log('client disconnected');
 	});
+	
 	c.on('data',function(d){
 		var p = new Player(c);
 		if (typeof p.packets[d[0].toString()] != "undefined") {
