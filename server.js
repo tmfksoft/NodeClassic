@@ -111,21 +111,19 @@ var Protocol = function(){
 		// Write to buffer.
 		var buf = new Buffer(data.length);
 		buf.write(data);
-		buffer.concat([buf]);
+		Buffer.concat([buffer,buf]);
 		return buffer;
 	}
 	this.from.byte = function(buffer,data){
 		console.log("FROM BYTE NOM");
 		
-		
 		console.log(data);
-		//buffer.write(parseInt(data));
 		//var buf = new Buffer(1);
-		var buf = new Buffer([parseInt(data)]);
+		var buf = new Buffer([data]);
 		console.log(buf);
 		console.log(buffer);
-		//buf.writeUInt8(data,0);
-		buffer.concat([buf],1);
+		Buffer.concat([buffer,buf]);
+		
 		return buffer;
 	}
 	this.from.sbyte = function(buffer,data){
@@ -153,9 +151,9 @@ var Player = function(sock){
 		var out = self.server.packets["0"]();
 		console.log("ID DATA");
 		console.log(out);
-		stream = new BufferStream(out);
-		stream.pipe(sock);
-		//sock.write(out);
+		//stream = new BufferStream(out);
+		//stream.pipe(sock);
+		sock.write(out);
 	}
 	this.packets["05"] = function(data){
 		console.log("Set Block");
