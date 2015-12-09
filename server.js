@@ -1,8 +1,13 @@
 var net = require('net');
 var self = {};
+var jspack = require('./jspack.js').jspack;
 self.conf = {};
 self.conf.port = 25560;
 self.conf.name = "A NodeJS MC Server";
+
+var d = jspack.Pack("Bhhh",[0x01,128,128,64]);
+console.log(d);
+console.log(new Buffer(d));
 
 var Server = function(){
 	this.packets = {};
@@ -12,6 +17,37 @@ var Server = function(){
 		
 		var data = [0x00,0x07,"NodeJS Server","The MOTD",0x00];
 		var structure = ["byte","byte","string","string","byte"];
+		
+		//var packet = self.protocol.construct(structure,data);
+		//console.log(packet);
+		//return packet;
+		return new Buffer(jspack.Pack("BBssb",data));
+	}
+	this.packets["1"] = function(){
+		console.log("Ping Client");
+		
+		var data = [0x01];
+		var structure = ["byte"];
+		
+		var packet = self.protocol.construct(structure,data);
+		console.log(packet);
+		return packet;
+	}
+	this.packets["2"] = function(){
+		console.log("Level INIT");
+		
+		var data = [0x02];
+		var structure = ["byte"];
+		
+		var packet = self.protocol.construct(structure,data);
+		console.log(packet);
+		return packet;
+	}
+	this.packets["4"] = function(){
+		console.log("Level Finalize");
+		
+		var data = [0x04,128,64,128];
+		var structure = ["byte","short","short","short"];
 		
 		var packet = self.protocol.construct(structure,data);
 		console.log(packet);
@@ -70,7 +106,7 @@ var Protocol = function(){
 			}
 		}
 		console.log("Buffer will be "+size+" ocets in size.");
-		var buff = new Buffer(size);
+		var buff = new Buffer(0);
 		for (var s in structure) {
 			console.log("Writing a "+structure[s]+" with the value of : "+data[s]);
 			if (typeof this.from[structure[s].toLowerCase()] != "undefined") {
@@ -111,8 +147,8 @@ var Protocol = function(){
 		// Write to buffer.
 		var buf = new Buffer(data.length);
 		buf.write(data);
-		Buffer.concat([buffer,buf]);
-		return buffer;
+		var res = Buffer.concat([buffer,buf]);
+		return res;
 	}
 	this.from.byte = function(buffer,data){
 		console.log("FROM BYTE NOM");
@@ -122,15 +158,17 @@ var Protocol = function(){
 		var buf = new Buffer([data]);
 		console.log(buf);
 		console.log(buffer);
-		Buffer.concat([buffer,buf]);
+		var res = Buffer.concat([buffer,buf]);
 		
-		return buffer;
+		return res;
 	}
 	this.from.sbyte = function(buffer,data){
 		return buffer;
 	}
 	this.from.short = function(buffer,data){
-		return buffer;
+		var buf = new Buffer([data]);
+		var res = Buffer.concat([buffer,buf]);
+		return res;
 	}
 	this.from.bytearray = function(buffer,data){
 		return buffer;
@@ -149,10 +187,15 @@ var Player = function(sock){
 		
 		// Send the welcome to the user.
 		var out = self.server.packets["0"]();
-		console.log("ID DATA");
-		console.log(out);
-		//stream = new BufferStream(out);
-		//stream.pipe(sock);
+		sock.write(out);
+		console.log("PACKET 0 START");
+		console.log(out.toString());
+		console.log("PACKET 0 END");
+		var out = self.server.packets["1"]();
+		sock.write(out);
+		var out = self.server.packets["2"]();
+		sock.write(out);
+		var out = self.server.packets["4"]();
 		sock.write(out);
 	}
 	this.packets["05"] = function(data){
